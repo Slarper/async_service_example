@@ -1,7 +1,5 @@
 
 
-use moro_local::async_scope;
-
 // #[tokio::main(flavor = "current_thread")]
 pub fn main() {
     let rt = tokio::runtime::Builder::new_current_thread()
@@ -10,27 +8,30 @@ pub fn main() {
         .expect("build runtime");
 
     rt.block_on(async {
-        let mut container = vec![1, 2, 3];
-        let mut num = 0;
         println!("hello from the main future");
-        async_scope!(|scope| {
-            let a = async {
+        let a = async {
+            let mut count = 5;
+            while count > 0 {
                 println!("hello from the first future");
-                dbg!(&container);
-            };
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                count -= 1;
+            }
+            Ok::<(), String>(())
 
-            let b = async {
+        };
+
+        let b = async {
+            let mut count = 3;
+            while count > 0 {
                 println!("hello from the second future");
-                num += container[0] + container[2];
-            };
-            scope.spawn(a);
-            scope.spawn(b);
-        }).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                count -= 1;
+            }
+            Err::<(), String>("Second Future Error".to_string())
+        };
 
-        
-        container.push(4);
-        assert_eq!(num, container.len());
-        println!("container: {:?}", container);
-        println!("num: {:?}", num);
+        let (a, b) = futures::join!(a, b);
+        a.unwrap();
+
     });
 }

@@ -1,0 +1,12 @@
+[package]
+name = "async_service_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.42.0", features = ["full"] }
+futures = "0.3"
+moro = "0.4.0"
+futures-concurrency = "7.6.2"
+moro-local = "0.4.0"
+

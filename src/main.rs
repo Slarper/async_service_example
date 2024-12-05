@@ -1,37 +1,35 @@
-
-
-// #[tokio::main(flavor = "current_thread")]
 pub fn main() {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .expect("build runtime");
 
-    rt.block_on(async {
+    let a = rt.block_on(async move {
         println!("hello from the main future");
-        let a = async {
-            let mut count = 5;
-            while count > 0 {
-                println!("hello from the first future");
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                count -= 1;
-            }
-            Ok::<(), String>(())
 
-        };
+        moro_local::async_scope!(|scope| {
+            let k = scope.spawn(async {
+                for i in 0..10 {
+                    //  tokio sleep 100 ms
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    println!("hello from the second child future: {}", i);
+                }
+                514
+            });
+            let x = k.await;
 
-        let b = async {
-            let mut count = 3;
-            while count > 0 {
-                println!("hello from the second future");
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                count -= 1;
-            }
-            Err::<(), String>("Second Future Error".to_string())
-        };
+            let h = scope.spawn(async {
+                println!("hello 111");
+                114
+            });
 
-        let (a, b) = futures::join!(a, b);
-        a.unwrap();
 
+            let y = h.await;
+
+            x + y
+        })
+        .await
     });
+
+    println!("a: {}", a);
 }
